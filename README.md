@@ -4,6 +4,7 @@ For Default
 
 - npm i --save @nestjs/config
 - npm i --save class-validator class-transformer
+- npm i --save @nestjs/mapped-types
 - npm install --save @nestjs/typeorm typeorm pg
 
 For Microservices
