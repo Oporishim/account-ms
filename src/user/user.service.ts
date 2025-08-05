@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,7 +14,7 @@ export class UserService {
     @InjectRepository(User) private userRepo: Repository<User>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto): Promise<Partial<User> | null> {
     const subscriber = this.subscriberRepo.create({
       name: createUserDto.name,
       email: createUserDto.email,
@@ -29,15 +29,30 @@ export class UserService {
     });
     await this.userRepo.save(user);
 
-    return user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, hashedRefreshToken, ...userWithoutPassword } = user;
+
+    return userWithoutPassword;
   }
 
   findAll() {
     return `This action returns all user`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: number): Promise<Partial<User> | null> {
+    const user = await this.userRepo.findOne({
+      where: { id },
+      relations: ['subscriber'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, hashedRefreshToken, ...userWithoutPassword } = user;
+
+    return userWithoutPassword;
   }
 
   findByEmail(email: string) {
@@ -51,5 +66,9 @@ export class UserService {
 
   remove(id: number) {
     return `This action removes a #${id} user`;
+  }
+
+  async updateHashedRefreshToken(userId: number, hashedRefreshToken: string) {
+    return await this.userRepo.update({ id: userId }, { hashedRefreshToken });
   }
 }

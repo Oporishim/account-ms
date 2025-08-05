@@ -9,15 +9,26 @@ export class AuthController {
 
   @MessagePattern({ cmd: 'auth/signin' })
   signin(@Payload() signInDto: SignInDto) {
-    const token = this.authService.login(signInDto);
-    return {
-      message: 'Token Generated Successfully',
-      token,
-    };
+    return this.authService.login(signInDto);
+  }
+
+  @MessagePattern({ cmd: 'auth/signout' })
+  signout(@Payload() userId: number) {
+    return this.authService.logout(userId);
   }
 
   @MessagePattern({ cmd: 'auth/validate-token' })
-  validateToken(@Payload() token: string) {
-    return this.authService.validateToken(token);
+  validateToken(@Payload() accessToken: string) {
+    return this.authService.validateToken(accessToken);
+  }
+
+  @MessagePattern({ cmd: 'auth/validate-refresh-token' })
+  validateRefreshToken(@Payload() refreshToken: string) {
+    return this.authService.validateRefreshToken(refreshToken);
+  }
+
+  @MessagePattern({ cmd: 'auth/refresh-token' })
+  refresh(@Payload() userId: number) {
+    return this.authService.generateAccessToken(userId);
   }
 }

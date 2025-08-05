@@ -9,8 +9,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { Subscriber } from 'src/subscriber/entities/subscriber.entity';
+import * as argon2 from 'argon2';
 
 @Entity('users')
 export class User {
@@ -43,6 +43,9 @@ export class User {
   @Column({ name: 'is_active', default: false })
   isActive: boolean;
 
+  @Column({ name: 'hashed_refresh_token', nullable: true })
+  hashedRefreshToken: string;
+
   @Column({ type: 'json', nullable: true })
   properties: any;
 
@@ -60,6 +63,6 @@ export class User {
 
   @BeforeInsert()
   async hashPassword() {
-    this.password = await bcrypt.hash(this.password, 10);
+    this.password = await argon2.hash(this.password);
   }
 }

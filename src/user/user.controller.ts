@@ -20,7 +20,7 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @MessagePattern('findOneUser')
+  @MessagePattern({ cmd: 'user/findOne' })
   findOne(@Payload() id: number) {
     return this.userService.findOne(id);
   }
