@@ -20,6 +20,6 @@ async function bootstrap() {
   app.useGlobalFilters(new MicroserviceHttpExceptionFilter());
   await app.listen();
 
-  console.log('Auth Microservice is running on port 4001.');
+  console.log('Account Microservice is running on port 4001.');
 }
 void bootstrap();

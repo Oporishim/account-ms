@@ -7,6 +7,7 @@ import { AuthJwtPayload } from './types/auth-jwtPayload';
 import refreshJwtConfig from './config/refresh-jwt.config';
 import { ConfigType } from '@nestjs/config';
 import * as argon2 from 'argon2';
+import { SignInDto } from './dto/sign-in.dto';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +19,7 @@ export class AuthService {
   ) {}
 
   // Login
-  async login(credential: { email: string; password: string }) {
+  async login(credential: SignInDto) {
     const user = await this.userRepo.findOne({
       where: { email: credential.email },
       relations: ['subscriber'],
@@ -33,7 +34,10 @@ export class AuthService {
     if (isMatch) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...userWithoutPassword } = user;
-      const tokens = await this.generateUserTokens(user);
+      const tokens = await this.generateUserTokens({
+        ...user,
+        appId: credential.appId,
+      });
 
       // Update hashed refresh token
       const hashedRefreshToken = await argon2.hash(tokens.refreshToken);
@@ -55,12 +59,19 @@ export class AuthService {
     return { success: true };
   }
 
-  async generateUserTokens(user: User): Promise<{
+  async generateUserTokens(user: {
+    id: number;
+    email: string;
+    appId: number;
+    subscriber: { id: number };
+  }): Promise<{
     accessToken: string;
     refreshToken: string;
   }> {
     const payload: AuthJwtPayload = {
       sub: user.id,
+      appId: user.appId,
+      subscriberId: user.subscriber.id,
       username: user.email,
       role: 'admin',
     };
@@ -77,10 +88,22 @@ export class AuthService {
   validateToken(token: string) {
     try {
       const decoded = this.jwtService.verify<AuthJwtPayload>(token);
-      return { valid: true, userId: decoded.sub, role: decoded.role };
+      return {
+        valid: true,
+        userId: decoded.sub,
+        appId: decoded.appId,
+        subscriberId: decoded.subscriberId,
+        role: decoded.role,
+      };
     } catch (error) {
       console.log(error);
-      return { valid: false, userId: null, role: null };
+      return {
+        valid: false,
+        userId: null,
+        appId: null,
+        subscriberId: null,
+        role: null,
+      };
     }
   }
 
@@ -105,14 +128,26 @@ export class AuthService {
       const isMatch = await argon2.verify(user.hashedRefreshToken, token);
       if (!isMatch) throw new UnauthorizedException('Invalid refresh token');
 
-      return { valid: true, userId: decoded.sub, role: decoded.role };
+      return {
+        valid: true,
+        userId: decoded.sub,
+        appId: decoded.appId,
+        subscriberId: user.subscriber.id,
+        role: decoded.role,
+      };
     } catch (error) {
       console.log(error);
-      return { valid: false, userId: null, role: null };
+      return {
+        valid: false,
+        userId: null,
+        appId: null,
+        subscriberId: null,
+        role: null,
+      };
     }
   }
 
-  async generateAccessToken(userId: number) {
+  async generateAccessToken(userId: number, appId: number) {
     const user = await this.userRepo.findOneBy({ id: userId });
 
     if (!user) {
@@ -121,6 +156,8 @@ export class AuthService {
 
     const payload: AuthJwtPayload = {
       sub: user.id,
+      appId: appId,
+      subscriberId: user.subscriber.id,
       username: user.email,
       role: 'admin',
     };

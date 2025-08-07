@@ -1,4 +1,10 @@
-import { IsDefined, IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsDefined,
+  IsEmail,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+} from 'class-validator';
 
 export class SignInDto {
   @IsDefined({ message: 'Email address is required' })
@@ -10,4 +16,8 @@ export class SignInDto {
   @IsNotEmpty({ message: 'Password value is required' })
   @IsString()
   password: string;
+
+  @IsDefined({ message: 'App ID is required' })
+  @IsNumber({}, { message: 'App ID must be a number' })
+  appId: number;
 }

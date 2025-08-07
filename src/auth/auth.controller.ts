@@ -28,7 +28,7 @@ export class AuthController {
   }
 
   @MessagePattern({ cmd: 'auth/refresh-token' })
-  refresh(@Payload() userId: number) {
-    return this.authService.generateAccessToken(userId);
+  refresh(@Payload() user: { userId: number; appId: number }) {
+    return this.authService.generateAccessToken(user.userId, user.appId);
   }
 }
